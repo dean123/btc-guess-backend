@@ -30,11 +30,31 @@ export class UsersService {
       id: randomUUID(),
       username: createUserDto.username,
       password: hashedPassword,
+      score: 0,
       createdAt: new Date().toISOString(),
     };
 
     await this.databaseService.put(this.tableName, user);
     return user;
+  }
+
+  async updateScore(userId: string, scoreDelta: number): Promise<User> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new Error(`User ${userId} not found`);
+    }
+
+    const newScore = (user.score || 0) + scoreDelta;
+    const updated = await this.databaseService.update(
+      this.tableName,
+      { id: userId },
+      'SET score = :score',
+      {},
+      {
+        ':score': newScore,
+      },
+    );
+    return updated as User;
   }
 
   async findByUsername(username: string): Promise<User | null> {

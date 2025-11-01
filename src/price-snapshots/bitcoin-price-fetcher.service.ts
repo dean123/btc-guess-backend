@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { PriceSnapshotsService } from './price-snapshots.service';
 import { GuessesService } from '../guesses/guesses.service';
+import { UsersService } from '../users/users.service';
 import { GuessDirection } from '../guesses/entities/guess-direction.enum';
 
 interface BinanceResponse {
@@ -18,6 +19,7 @@ export class BitcoinPriceFetcherService {
     private readonly httpService: HttpService,
     private readonly priceSnapshotsService: PriceSnapshotsService,
     private readonly guessesService: GuessesService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -75,8 +77,13 @@ export class BitcoinPriceFetcherService {
           (guess.direction === GuessDirection.DOWN && !priceWentUp);
 
         await this.guessesService.resolveGuess(guess.id, isCorrect);
+
+        // Update user score: +1 for correct, -1 for incorrect
+        const scoreDelta = isCorrect ? 1 : -1;
+        await this.usersService.updateScore(guess.userId, scoreDelta);
+
         this.logger.log(
-          `Resolved guess ${guess.id}: ${isCorrect ? 'correct' : 'incorrect'}`,
+          `Resolved guess ${guess.id}: ${isCorrect ? 'correct' : 'incorrect'} (user ${guess.userId} score ${scoreDelta > 0 ? '+' : ''}${scoreDelta})`,
         );
       }
     } catch (error) {
