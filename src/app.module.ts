@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { PriceSnapshotsModule } from './price-snapshots/price-snapshots.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { GuessesModule } from './guesses/guesses.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module';
     PriceSnapshotsModule,
     AuthModule,
     UsersModule,
+    GuessesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

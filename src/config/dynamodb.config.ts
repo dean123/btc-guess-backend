@@ -6,4 +6,5 @@ export default registerAs('dynamodb', () => ({
   priceSnapshotsTable:
     process.env.DYNAMODB_PRICE_SNAPSHOTS_TABLE || 'price-snapshots',
   usersTable: process.env.DYNAMODB_USERS_TABLE || 'users',
+  guessesTable: process.env.DYNAMODB_GUESSES_TABLE || 'guesses',
 }));

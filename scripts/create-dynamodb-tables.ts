@@ -13,6 +13,7 @@ const endpoint = process.env.DYNAMODB_ENDPOINT;
 const priceSnapshotsTable =
   process.env.DYNAMODB_PRICE_SNAPSHOTS_TABLE || 'price-snapshots';
 const usersTable = process.env.DYNAMODB_USERS_TABLE || 'users';
+const guessesTable = process.env.DYNAMODB_GUESSES_TABLE || 'guesses';
 
 const client = new DynamoDBClient({
   region,
@@ -70,6 +71,7 @@ async function main() {
   try {
     await createTable(priceSnapshotsTable, 'Bitcoin price snapshots');
     await createTable(usersTable, 'Application users');
+    await createTable(guessesTable, 'User guesses');
     console.log('');
     console.log('✓ All tables ready!');
   } catch (error) {
