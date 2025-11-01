@@ -57,7 +57,9 @@ export class DatabaseService implements OnModuleInit {
       TableName: tableName,
       Key: key,
       UpdateExpression: updateExpression,
-      ExpressionAttributeNames: expressionAttributeNames,
+      ...(Object.keys(expressionAttributeNames).length > 0 && {
+        ExpressionAttributeNames: expressionAttributeNames,
+      }),
       ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: 'ALL_NEW',
     });

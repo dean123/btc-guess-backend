@@ -47,4 +47,41 @@ export class GuessesService {
     );
     return result as Guess[];
   }
+
+  async findByPriceSnapshotId(priceSnapshotId: string): Promise<Guess[]> {
+    const result = await this.databaseService.scan(
+      this.tableName,
+      'priceSnapshotId = :priceSnapshotId',
+      undefined,
+      {
+        ':priceSnapshotId': priceSnapshotId,
+      },
+    );
+    return result as Guess[];
+  }
+
+  async findUnresolved(): Promise<Guess[]> {
+    const result = await this.databaseService.scan(
+      this.tableName,
+      'attribute_not_exists(isCorrect) OR isCorrect = :null',
+      undefined,
+      {
+        ':null': null,
+      },
+    );
+    return result as Guess[];
+  }
+
+  async resolveGuess(guessId: string, isCorrect: boolean): Promise<Guess> {
+    const updated = await this.databaseService.update(
+      this.tableName,
+      { id: guessId },
+      'SET isCorrect = :isCorrect',
+      {},
+      {
+        ':isCorrect': isCorrect,
+      },
+    );
+    return updated as Guess;
+  }
 }
