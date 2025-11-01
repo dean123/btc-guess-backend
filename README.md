@@ -1,98 +1,277 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# BTC Guess Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A real-time Bitcoin price guessing game backend built with NestJS. Users can guess whether Bitcoin's price will go UP or DOWN, and the system automatically resolves guesses and updates scores when new prices come in.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+This application fetches Bitcoin prices from CoinGecko every minute and allows users to make predictions about price movements. It features:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **User Authentication** - JWT-based authentication with bcrypt password hashing
+- **Real-time Price Tracking** - Automated Bitcoin price fetching via CoinGecko API
+- **Guess System** - Users predict UP/DOWN price movements
+- **Automatic Resolution** - Guesses are automatically resolved when new prices arrive
+- **Scoring System** - +1 point for correct guesses, -1 for incorrect guesses
+- **AWS DynamoDB** - NoSQL database for scalable storage
 
-## Project setup
+## Architecture
 
-```bash
-$ npm install
+```
+src/
+├── auth/           # JWT authentication & user registration
+├── users/          # User management & scoring
+├── price-snapshots/ # Bitcoin price fetching & storage
+├── guesses/        # Guess creation & resolution
+├── config/         # Configuration (DynamoDB, etc.)
+└── database/       # DynamoDB service wrapper
 ```
 
-## Compile and run the project
+## Tech Stack
+
+- **NestJS** - Progressive Node.js framework
+- **TypeScript** - Type-safe JavaScript
+- **AWS DynamoDB** - NoSQL database
+- **JWT** - JSON Web Tokens for authentication
+- **bcrypt** - Password hashing
+- **CoinGecko API** - Bitcoin price data
+- **Docker** - Containerization
+
+## Prerequisites
+
+- Node.js 22+
+- npm or yarn
+- AWS Account (for DynamoDB)
+- AWS CLI configured (for local development with DynamoDB)
+
+## Local Development Setup
+
+### 1. Install Dependencies
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+### 2. Set Up Local DynamoDB
+
+You have two options for local development:
+
+#### Option A: Use DynamoDB Local (Recommended for Local Development)
 
 ```bash
-# unit tests
-$ npm run test
+# Install and run DynamoDB Local with Docker
+docker run -p 8000:8000 amazon/dynamodb-local
 
-# e2e tests
-$ npm run test:e2e
+# In another terminal, create local tables
+npm run dynamodb:create-tables
+```
 
-# test coverage
-$ npm run test:cov
+#### Option B: Use AWS DynamoDB
+
+Make sure your AWS CLI is configured with credentials:
+
+```bash
+aws configure
+```
+
+### 3. Configure Environment Variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your configuration:
+
+```env
+# AWS Configuration
+AWS_REGION=eu-central-1
+
+# DynamoDB Tables
+DYNAMODB_PRICE_SNAPSHOTS_TABLE=price-snapshots
+DYNAMODB_USERS_TABLE=users
+DYNAMODB_GUESSES_TABLE=guesses
+
+# For local DynamoDB, uncomment:
+# DYNAMODB_ENDPOINT=http://localhost:8000
+
+# JWT Configuration
+JWT_SECRET=your-local-secret-key
+JWT_EXPIRES_IN=7d
+
+# CORS Configuration
+CORS_ORIGIN=http://localhost:3001
+```
+
+### 4. Create DynamoDB Tables
+
+If using AWS DynamoDB:
+
+```bash
+# Using the automated script
+./scripts/create-dynamodb-tables-aws.sh
+
+# Or manually create tables with AWS CLI
+aws dynamodb create-table \
+    --table-name users \
+    --attribute-definitions AttributeName=id,AttributeType=S \
+    --key-schema AttributeName=id,KeyType=HASH \
+    --billing-mode PAY_PER_REQUEST
+
+aws dynamodb create-table \
+    --table-name price-snapshots \
+    --attribute-definitions AttributeName=id,AttributeType=S \
+    --key-schema AttributeName=id,KeyType=HASH \
+    --billing-mode PAY_PER_REQUEST
+
+aws dynamodb create-table \
+    --table-name guesses \
+    --attribute-definitions AttributeName=id,AttributeType=S \
+    --key-schema AttributeName=id,KeyType=HASH \
+    --billing-mode PAY_PER_REQUEST
+```
+
+### 5. Run the Development Server
+
+```bash
+# Development mode with hot-reload
+npm run start:dev
+
+# Regular development mode
+npm run start
+
+# Production mode
+npm run start:prod
+```
+
+The server will start on `http://localhost:3000`
+
+## API Endpoints
+
+### Authentication
+
+```bash
+# Register a new user
+POST /auth/register
+Body: { "username": "john", "password": "SecurePass123!" }
+
+# Login
+POST /auth/login
+Body: { "username": "john", "password": "SecurePass123!" }
+Response: { "access_token": "jwt-token" }
+```
+
+### Price Snapshots
+
+```bash
+# Get latest price snapshots (requires auth)
+GET /price-snapshots/latest
+Headers: { "Authorization": "Bearer <token>" }
+```
+
+### Guesses
+
+```bash
+# Create a new guess (requires auth)
+POST /guesses
+Headers: { "Authorization": "Bearer <token>" }
+Body: { "priceSnapshotId": "uuid", "direction": "UP" }
+
+# Get my guesses
+GET /guesses/me
+Headers: { "Authorization": "Bearer <token>" }
+```
+
+### Users
+
+```bash
+# Get my profile
+GET /users/me
+Headers: { "Authorization": "Bearer <token>" }
+```
+
+## How It Works
+
+1. **Price Fetching**: A cron job runs every minute to fetch the latest Bitcoin price from CoinGecko
+2. **Price Storage**: Each price is stored as a snapshot in DynamoDB
+3. **User Guessing**: Users can make a guess (UP or DOWN) for any price snapshot
+4. **Automatic Resolution**: When a new price arrives, the system:
+   - Finds all unresolved guesses
+   - Compares the new price with the snapshot price
+   - Determines if each guess was correct
+   - Updates user scores (+1 correct, -1 incorrect)
+   - Marks guesses as resolved
+
+## Testing
+
+```bash
+# Unit tests
+npm run test
+```
+
+## Building for Production
+
+```bash
+# Build the application
+npm run build
+
+# Run the built application
+npm run start:prod
 ```
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+For production deployment to AWS App Runner.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Environment Variables
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+| Variable                         | Description                    | Default           |
+| -------------------------------- | ------------------------------ | ----------------- |
+| `AWS_REGION`                     | AWS region for DynamoDB        | `eu-central-1`    |
+| `DYNAMODB_ENDPOINT`              | DynamoDB endpoint (local only) | -                 |
+| `DYNAMODB_USERS_TABLE`           | Users table name               | `users`           |
+| `DYNAMODB_PRICE_SNAPSHOTS_TABLE` | Price snapshots table name     | `price-snapshots` |
+| `DYNAMODB_GUESSES_TABLE`         | Guesses table name             | `guesses`         |
+| `JWT_SECRET`                     | Secret key for JWT signing     | Required          |
+| `JWT_EXPIRES_IN`                 | JWT expiration time            | `7d`              |
+| `CORS_ORIGIN`                    | Allowed CORS origin            | `*`               |
+| `PORT`                           | Server port                    | `3000`            |
+
+## Project Structure
+
 ```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+btc-guess-backend/
+├── src/
+│   ├── auth/                    # Authentication module
+│   │   ├── auth.controller.ts   # Login/register endpoints
+│   │   ├── auth.service.ts      # Auth business logic
+│   │   ├── jwt.strategy.ts      # JWT passport strategy
+│   │   └── jwt-auth.guard.ts    # JWT guard
+│   ├── users/                   # User management
+│   │   ├── users.service.ts     # User CRUD & scoring
+│   │   ├── users.controller.ts  # User endpoints
+│   │   └── entities/user.entity.ts
+│   ├── price-snapshots/         # Bitcoin price tracking
+│   │   ├── price-snapshots.service.ts
+│   │   ├── bitcoin-price-fetcher.service.ts  # Cron job
+│   │   └── entities/price-snapshot.entity.ts
+│   ├── guesses/                 # Guess system
+│   │   ├── guesses.service.ts   # Guess CRUD & resolution
+│   │   ├── guesses.controller.ts
+│   │   └── entities/
+│   │       ├── guess.entity.ts
+│   │       └── guess-direction.enum.ts
+│   ├── database/                # DynamoDB wrapper
+│   │   └── database.service.ts
+│   ├── config/                  # Configuration
+│   │   └── dynamodb.config.ts
+│   ├── app.module.ts            # Root module
+│   └── main.ts                  # Application entry
+├── scripts/
+│   ├── create-dynamodb-tables.ts        # Local table creation
+│   ├── create-dynamodb-tables-aws.sh    # AWS table creation
+│   ├── create-iam-role.sh               # IAM role setup
+│   └── test-deployment.sh               # Deployment testing
+├── Dockerfile                   # Docker configuration
+├── DEPLOYMENT.md               # Deployment guide
+└── README.md                   # This file
+```
