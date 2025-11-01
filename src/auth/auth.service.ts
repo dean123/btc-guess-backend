@@ -25,6 +25,7 @@ export class AuthService {
       username: user.username,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      score: user.score,
     };
 
     return {
@@ -55,6 +56,7 @@ export class AuthService {
       username: user.username,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      score: user.score,
     };
 
     return {
@@ -74,6 +76,7 @@ export class AuthService {
       username: user.username,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      score: user.score,
     };
   }
 }
