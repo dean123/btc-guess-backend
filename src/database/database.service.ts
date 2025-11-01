@@ -14,14 +14,12 @@ import {
 @Injectable()
 export class DatabaseService implements OnModuleInit {
   private docClient: DynamoDBDocumentClient;
-  private tableName?: string;
 
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
     const region = this.configService.get<string>('dynamodb.region');
     const endpoint = this.configService.get<string>('dynamodb.endpoint');
-    this.tableName = this.configService.get<string>('dynamodb.tableName');
 
     const client = new DynamoDBClient({
       region,
@@ -31,21 +29,17 @@ export class DatabaseService implements OnModuleInit {
     this.docClient = DynamoDBDocumentClient.from(client);
   }
 
-  getTableName(): string | undefined {
-    return this.tableName;
-  }
-
-  async put(item: Record<string, any>) {
+  async put(tableName: string, item: Record<string, any>) {
     const command = new PutCommand({
-      TableName: this.tableName,
+      TableName: tableName,
       Item: item,
     });
     return this.docClient.send(command);
   }
 
-  async get(key: Record<string, any>) {
+  async get(tableName: string, key: Record<string, any>) {
     const command = new GetCommand({
-      TableName: this.tableName,
+      TableName: tableName,
       Key: key,
     });
     const result = await this.docClient.send(command);
@@ -53,13 +47,14 @@ export class DatabaseService implements OnModuleInit {
   }
 
   async update(
+    tableName: string,
     key: Record<string, any>,
     updateExpression: string,
     expressionAttributeNames: Record<string, string>,
     expressionAttributeValues: Record<string, any>,
   ) {
     const command = new UpdateCommand({
-      TableName: this.tableName,
+      TableName: tableName,
       Key: key,
       UpdateExpression: updateExpression,
       ExpressionAttributeNames: expressionAttributeNames,
@@ -70,22 +65,23 @@ export class DatabaseService implements OnModuleInit {
     return result.Attributes;
   }
 
-  async delete(key: Record<string, any>) {
+  async delete(tableName: string, key: Record<string, any>) {
     const command = new DeleteCommand({
-      TableName: this.tableName,
+      TableName: tableName,
       Key: key,
     });
     return this.docClient.send(command);
   }
 
   async query(
+    tableName: string,
     keyConditionExpression: string,
     expressionAttributeNames?: Record<string, string>,
     expressionAttributeValues?: Record<string, any>,
     filterExpression?: string,
   ) {
     const command = new QueryCommand({
-      TableName: this.tableName,
+      TableName: tableName,
       KeyConditionExpression: keyConditionExpression,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
@@ -96,12 +92,13 @@ export class DatabaseService implements OnModuleInit {
   }
 
   async scan(
+    tableName: string,
     filterExpression?: string,
     expressionAttributeNames?: Record<string, string>,
     expressionAttributeValues?: Record<string, any>,
   ) {
     const command = new ScanCommand({
-      TableName: this.tableName,
+      TableName: tableName,
       FilterExpression: filterExpression,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
