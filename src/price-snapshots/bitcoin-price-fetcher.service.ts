@@ -7,8 +7,10 @@ import { GuessesService } from '../guesses/guesses.service';
 import { UsersService } from '../users/users.service';
 import { GuessDirection } from '../guesses/entities/guess-direction.enum';
 
-interface BinanceResponse {
-  price?: string;
+interface CoinGeckoResponse {
+  bitcoin?: {
+    usd?: number;
+  };
 }
 
 @Injectable()
@@ -27,16 +29,16 @@ export class BitcoinPriceFetcherService {
     try {
       const response = await firstValueFrom(
         this.httpService.get(
-          'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT',
+          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
         ),
       );
 
-      const data = response.data as BinanceResponse;
-      if (!data.price) {
-        throw Error('Missing price value in Binance response');
+      const data = response.data as CoinGeckoResponse;
+      if (!data.bitcoin?.usd) {
+        throw Error('Missing price value in CoinGecko response');
       }
 
-      const price = parseFloat(data.price);
+      const price = data.bitcoin.usd;
       const timestamp = new Date().toISOString();
 
       this.logger.log(`Fetched Bitcoin price: $${price} at ${timestamp}`);
